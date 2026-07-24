@@ -1,0 +1,13 @@
+services:
+  odpocet:
+    build: .
+    container_name: odpocet-pracovni-doby
+    ports:
+      - "13400:13400"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:13400/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

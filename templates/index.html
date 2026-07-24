@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Odpočet pracovní doby</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="card">
+    <h1>Odpočet pracovní doby</h1>
+    <p class="subtitle">Pracovní doba: <strong>8 h 30 min</strong></p>
+
+    <label for="arrival">Čas příchodu</label>
+    <div class="input-row">
+      <input type="text" id="arrival" placeholder="např. 6:00" inputmode="numeric"
+             pattern="[0-9]{1,2}:[0-9]{2}" autocomplete="off">
+      <button type="button" id="openClock" title="Vybrat na ciferníku">🕐</button>
+    </div>
+
+    <label for="overtime">Aktuální přesčas (nadpracováno)</label>
+    <div class="input-row">
+      <input type="text" id="overtime" placeholder="např. 3:30" inputmode="numeric"
+             pattern="[0-9]{1,2}:[0-9]{2}" autocomplete="off">
+      <button type="button" id="openClockOt" title="Vybrat na ciferníku">🕐</button>
+    </div>
+
+    <section class="result" id="result" hidden>
+      <div class="departure">
+        Očekávaný odchod: <span id="departure">—</span>
+      </div>
+      <div class="countdown" id="countdown">—</div>
+      <div class="status" id="status"></div>
+
+      <div class="overtime-result" id="overtimeResult" hidden>
+        <div class="departure small">
+          S přesčasem stačí do: <span id="departureOt">—</span>
+        </div>
+        <div class="countdown small" id="countdownOt">—</div>
+        <div class="status small" id="statusOt"></div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <button type="button" id="clearData">Vymazat údaje</button>
+    </div>
+  </main>
+
+  <!-- Modální okno s ciferníkem -->
+  <div class="overlay" id="overlay" hidden>
+    <div class="clock-modal">
+      <div class="clock-header">
+        <span class="clock-value" id="pickHour">00</span>
+        <span class="clock-sep">:</span>
+        <span class="clock-value" id="pickMinute">00</span>
+      </div>
+      <div class="clock-mode" id="clockMode">Vyber hodinu</div>
+      <svg id="clockFace" viewBox="0 0 240 240" width="240" height="240"></svg>
+      <div class="clock-actions">
+        <button type="button" id="clockCancel" class="secondary">Zrušit</button>
+        <button type="button" id="clockOk">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.WORK_MINUTES = {{ work_minutes }};
+  </script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
