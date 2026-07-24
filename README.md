@@ -3,6 +3,10 @@
 Jednoduchá webová aplikace (Python / Flask): zadáš čas příchodu a dynamicky se
 odpočítává pracovní doba **8 h 30 min**. Ukazuje také čas očekávaného odchodu.
 
+## Náhled
+
+![Náhled aplikace](Screenshot.png)
+
 ## Funkce
 
 - **Čas příchodu** – jde napsat **ručně** (formát `H:MM`, např. `6:00`),
