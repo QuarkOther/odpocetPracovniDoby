@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 13400
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-b", "0.0.0.0:13400", "-w", "2", "app:app"]

@@ -43,7 +43,7 @@ Poté otevři <http://localhost:13400>.
 > **Pozor – healthcheck podu:** healthcheck v `docker-compose.yml` míří na
 > `http://localhost:13400/`. Pokud kontejner běží jako pod na jiném stroji (ne
 > lokálně), je potřeba adresu `localhost` upravit na adresu daného stroje,
-> například `http://10.10.9.101:13400/`.
+> například `http://192.0.2.10:13400/`.
 
 ## Lokální spuštění (bez kontejneru)
 ```bash
