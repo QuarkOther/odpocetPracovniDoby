@@ -4,9 +4,11 @@ const WORK_MINUTES = window.WORK_MINUTES; // 8h30m = 510
 
 const STORAGE_KEY = "arrivalTime";
 const OVERTIME_KEY = "overtime";
+const ACTUAL_KEY = "actualDeparture";
 
 const arrivalInput = document.getElementById("arrival");
 const overtimeInput = document.getElementById("overtime");
+const actualInput = document.getElementById("actual");
 const resultBox = document.getElementById("result");
 const departureEl = document.getElementById("departure");
 const countdownEl = document.getElementById("countdown");
@@ -16,6 +18,14 @@ const overtimeResult = document.getElementById("overtimeResult");
 const departureOtEl = document.getElementById("departureOt");
 const countdownOtEl = document.getElementById("countdownOt");
 const statusOtEl = document.getElementById("statusOt");
+
+const actualResult = document.getElementById("actualResult");
+const workedEl = document.getElementById("worked");
+const actualDiffEl = document.getElementById("actualDiff");
+const actualStatusEl = document.getElementById("actualStatus");
+const balanceResult = document.getElementById("balanceResult");
+const balanceLabelEl = document.getElementById("balanceLabel");
+const balanceValueEl = document.getElementById("balanceValue");
 
 /* ---------- Odpočet ---------- */
 
@@ -43,6 +53,7 @@ function startCountdown() {
   const arrivalMin = parseTime(arrivalInput.value);
   if (arrivalMin === null) {
     resultBox.hidden = true;
+    actualResult.hidden = true;
     localStorage.removeItem(STORAGE_KEY);
     if (timer) clearInterval(timer);
     return;
@@ -75,9 +86,71 @@ function startCountdown() {
     overtimeResult.hidden = true;
   }
 
+  updateActual(arrivalMin);
+
   if (timer) clearInterval(timer);
   tick();
   timer = setInterval(tick, 1000);
+}
+
+// Porovná skutečný odchod s plnou pracovní dobou od příchodu
+function updateActual(arrivalMin) {
+  const actualMin = parseTime(actualInput.value);
+  if (actualMin === null) {
+    localStorage.removeItem(ACTUAL_KEY);
+    actualResult.hidden = true;
+    return;
+  }
+
+  localStorage.setItem(ACTUAL_KEY, actualInput.value);
+
+  // Odchod před příchodem = práce přes půlnoc
+  let workedMin = actualMin - arrivalMin;
+  if (workedMin < 0) workedMin += 24 * 60;
+
+  const diff = workedMin - WORK_MINUTES;
+  workedEl.textContent = fmtDur(workedMin);
+
+  if (diff >= 0) {
+    actualDiffEl.textContent = "+" + fmtDur(diff);
+    actualDiffEl.className = "countdown small green";
+    actualStatusEl.className = "status small green";
+    actualStatusEl.textContent = "Přesčas";
+  } else {
+    actualDiffEl.textContent = "−" + fmtDur(-diff);
+    actualDiffEl.className = "countdown small red";
+    actualStatusEl.className = "status small red";
+    actualStatusEl.textContent = "Chybí do naplnění pracovní doby";
+  }
+
+  // Se zadaným přesčasem: dnešní manko se odečte z naspořeného přesčasu
+  const overtimeMin = parseTime(overtimeInput.value);
+  if (overtimeMin !== null && overtimeMin > 0) {
+    const balance = overtimeMin + diff;
+    if (balance >= 0) {
+      balanceLabelEl.className = "status green";
+      balanceLabelEl.textContent = "Zbývá přesčasu";
+      balanceValueEl.className = "countdown green";
+      balanceValueEl.textContent = "+" + fmtDur(balance);
+    } else {
+      balanceLabelEl.className = "status red";
+      balanceLabelEl.textContent = "Přesčas vyčerpán, chybí odpracovat";
+      balanceValueEl.className = "countdown red";
+      balanceValueEl.textContent = "−" + fmtDur(-balance);
+    }
+    balanceResult.hidden = false;
+  } else {
+    balanceResult.hidden = true;
+  }
+
+  actualResult.hidden = false;
+}
+
+// Délka trvání jako "H:MM" (bez omezení na 24 h)
+function fmtDur(totalMin) {
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return h + ":" + String(m).padStart(2, "0");
 }
 
 function tick() {
@@ -119,10 +192,14 @@ function fmtHMS(totalSec) {
 
 arrivalInput.addEventListener("input", startCountdown);
 overtimeInput.addEventListener("input", startCountdown);
+actualInput.addEventListener("input", startCountdown);
 
 // Po načtení stránky obnov naposledy zadané hodnoty
 const savedOvertime = localStorage.getItem(OVERTIME_KEY);
 if (savedOvertime) overtimeInput.value = savedOvertime;
+
+const savedActual = localStorage.getItem(ACTUAL_KEY);
+if (savedActual) actualInput.value = savedActual;
 
 const saved = localStorage.getItem(STORAGE_KEY);
 if (saved) {
@@ -149,6 +226,7 @@ let clockTarget = arrivalInput; // vstup, do kterého ciferník zapíše
 
 document.getElementById("openClock").addEventListener("click", () => openClock(arrivalInput));
 document.getElementById("openClockOt").addEventListener("click", () => openClock(overtimeInput));
+document.getElementById("openClockActual").addEventListener("click", () => openClock(actualInput));
 document.getElementById("clockCancel").addEventListener("click", closeClock);
 document.getElementById("clockOk").addEventListener("click", confirmClock);
 pickHourEl.addEventListener("click", () => setMode("hour"));
@@ -295,13 +373,16 @@ svg.addEventListener("pointerup", () => {
 /* ---------- Vymazání údajů ---------- */
 
 document.getElementById("clearData").addEventListener("click", () => {
-  if (!confirm("Opravdu vymazat zadaný čas příchodu i přesčas?")) return;
+  if (!confirm("Opravdu vymazat zadaný čas příchodu, přesčas i skutečný odchod?")) return;
 
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(OVERTIME_KEY);
+  localStorage.removeItem(ACTUAL_KEY);
   arrivalInput.value = "";
   overtimeInput.value = "";
+  actualInput.value = "";
   resultBox.hidden = true;
   overtimeResult.hidden = true;
+  actualResult.hidden = true;
   if (timer) clearInterval(timer);
 });

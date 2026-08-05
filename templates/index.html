@@ -41,6 +41,28 @@
       </div>
     </section>
 
+    <section class="actual">
+      <label for="actual">Skutečný odchod</label>
+      <div class="input-row">
+        <input type="text" id="actual" placeholder="např. 15:30" inputmode="numeric"
+               pattern="[0-9]{1,2}:[0-9]{2}" autocomplete="off">
+        <button type="button" id="openClockActual" title="Vybrat na ciferníku">🕐</button>
+      </div>
+
+      <div class="actual-result" id="actualResult" hidden>
+        <div class="departure small">
+          Odpracováno: <span id="worked">—</span>
+        </div>
+        <div class="countdown small" id="actualDiff">—</div>
+        <div class="status small" id="actualStatus"></div>
+
+        <div class="balance" id="balanceResult" hidden>
+          <div class="status" id="balanceLabel"></div>
+          <div class="countdown" id="balanceValue">—</div>
+        </div>
+      </div>
+    </section>
+
     <div class="footer">
       <button type="button" id="clearData">Vymazat údaje</button>
     </div>
