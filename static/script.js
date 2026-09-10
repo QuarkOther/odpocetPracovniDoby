@@ -29,14 +29,17 @@ const balanceValueEl = document.getElementById("balanceValue");
 
 /* ---------- Odpočet ---------- */
 
-// Vrátí "HH:MM" -> minuty od půlnoci, nebo null když je vstup neplatný
-function parseTime(str) {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(str.trim());
+// Vrátí "HH:MM" (volitelně se znaménkem "-") -> minuty od půlnoci, nebo null když je vstup neplatný.
+// allowNegative povoluje záporný přesčas (chybějící odpracovaná doba).
+function parseTime(str, allowNegative = false) {
+  const m = /^(-)?(\d{1,2}):(\d{2})$/.exec(str.trim());
   if (!m) return null;
-  const h = parseInt(m[1], 10);
-  const min = parseInt(m[2], 10);
+  if (m[1] && !allowNegative) return null;
+  const h = parseInt(m[2], 10);
+  const min = parseInt(m[3], 10);
   if (h > 23 || min > 59) return null;
-  return h * 60 + min;
+  const sign = m[1] ? -1 : 1;
+  return sign * (h * 60 + min);
 }
 
 function fmtHM(totalMin) {
@@ -70,9 +73,9 @@ function startCountdown() {
   departureMain = new Date(now0);
   departureMain.setHours(0, departureMin, 0, 0);
 
-  // Přesčas: zkrátí potřebnou pracovní dobu (min. 0)
-  const overtimeMin = parseTime(overtimeInput.value);
-  if (overtimeMin !== null && overtimeMin > 0) {
+  // Přesčas: zkrátí potřebnou pracovní dobu (min. 0), záporný přesčas ji naopak prodlouží
+  const overtimeMin = parseTime(overtimeInput.value, true);
+  if (overtimeMin !== null && overtimeMin !== 0) {
     localStorage.setItem(OVERTIME_KEY, overtimeInput.value);
     const requiredMin = Math.max(0, WORK_MINUTES - overtimeMin);
     const departureOtMin = arrivalMin + requiredMin;
@@ -123,9 +126,9 @@ function updateActual(arrivalMin) {
     actualStatusEl.textContent = "Chybí do naplnění pracovní doby";
   }
 
-  // Se zadaným přesčasem: dnešní manko se odečte z naspořeného přesčasu
-  const overtimeMin = parseTime(overtimeInput.value);
-  if (overtimeMin !== null && overtimeMin > 0) {
+  // Se zadaným přesčasem: dnešní manko se odečte z naspořeného přesčasu (i záporného)
+  const overtimeMin = parseTime(overtimeInput.value, true);
+  if (overtimeMin !== null && overtimeMin !== 0) {
     const balance = overtimeMin + diff;
     if (balance >= 0) {
       balanceLabelEl.className = "status green";
@@ -214,6 +217,8 @@ const svg = document.getElementById("clockFace");
 const pickHourEl = document.getElementById("pickHour");
 const pickMinuteEl = document.getElementById("pickMinute");
 const clockModeEl = document.getElementById("clockMode");
+const clockNegativeRow = document.getElementById("clockNegativeRow");
+const clockNegativeEl = document.getElementById("clockNegative");
 const SVGNS = "http://www.w3.org/2000/svg";
 
 const CX = 120, CY = 120;
@@ -235,13 +240,19 @@ overlay.addEventListener("click", (e) => { if (e.target === overlay) closeClock(
 
 function openClock(target) {
   clockTarget = target;
-  const existing = parseTime(target.value);
+  const isOvertime = target === overtimeInput;
+  clockNegativeRow.hidden = !isOvertime;
+
+  const existing = parseTime(target.value, isOvertime);
   if (existing !== null) {
-    selHour = Math.floor(existing / 60);
-    selMinute = existing % 60;
+    const absExisting = Math.abs(existing);
+    selHour = Math.floor(absExisting / 60);
+    selMinute = absExisting % 60;
+    clockNegativeEl.checked = isOvertime && existing < 0;
   } else {
     selHour = 0;
     selMinute = 0;
+    clockNegativeEl.checked = false;
   }
   setMode("hour");
   overlay.hidden = false;
@@ -250,10 +261,15 @@ function openClock(target) {
 function closeClock() { overlay.hidden = true; }
 
 function confirmClock() {
+  const sign = (isOvertimeClock() && clockNegativeEl.checked) ? "-" : "";
   clockTarget.value =
-    String(selHour).padStart(2, "0") + ":" + String(selMinute).padStart(2, "0");
+    sign + String(selHour).padStart(2, "0") + ":" + String(selMinute).padStart(2, "0");
   closeClock();
   startCountdown();
+}
+
+function isOvertimeClock() {
+  return clockTarget === overtimeInput;
 }
 
 function setMode(m) {

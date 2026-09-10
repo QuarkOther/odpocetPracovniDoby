@@ -20,8 +20,8 @@
 
     <label for="overtime">Aktuální přesčas (nadpracováno)</label>
     <div class="input-row">
-      <input type="text" id="overtime" placeholder="např. 3:30" inputmode="numeric"
-             pattern="[0-9]{1,2}:[0-9]{2}" autocomplete="off">
+      <input type="text" id="overtime" placeholder="např. 3:30 nebo -1:15" inputmode="numeric"
+             pattern="-?[0-9]{1,2}:[0-9]{2}" autocomplete="off">
       <button type="button" id="openClockOt" title="Vybrat na ciferníku">🕐</button>
     </div>
 
@@ -78,6 +78,12 @@
       </div>
       <div class="clock-mode" id="clockMode">Vyber hodinu</div>
       <svg id="clockFace" viewBox="0 0 240 240" width="240" height="240"></svg>
+      <div class="clock-negative-row" id="clockNegativeRow" hidden>
+        <label>
+          <input type="checkbox" id="clockNegative">
+          Záporný přesčas (chybějící doba)
+        </label>
+      </div>
       <div class="clock-actions">
         <button type="button" id="clockCancel" class="secondary">Zrušit</button>
         <button type="button" id="clockOk">OK</button>
