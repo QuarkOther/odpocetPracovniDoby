@@ -50,6 +50,21 @@ Poté otevři <http://localhost:13400>.
 > nastav `http://localhost:13400` – pak nejde hlavičky `CF-Connecting-IP` /
 > `CF-IP*` (IP a poloha návštěvníka) podvrhnout obejitím Cloudflare.
 
+### Start po rebootu (rootless Podman)
+Rootless Podman nemá daemon, takže `restart: unless-stopped` po restartu
+serveru kontejnery sám nespustí. Stack proto spouští systemd user unit
+[`deploy/odpocet.service`](deploy/odpocet.service):
+
+```bash
+loginctl enable-linger "$USER"   # user služby běží i bez přihlášení
+cp deploy/odpocet.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable odpocet.service
+```
+
+Unit předpokládá repozitář v `~/Github/odpocetPracovniDoby` (jinak uprav
+`WorkingDirectory`).
+
 ## Lokální spuštění (bez kontejneru)
 ```bash
 pip install -r requirements.txt

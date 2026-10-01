@@ -1,0 +1,18 @@
+# Systemd user unit – spustí compose stack po startu serveru.
+# Rootless podman nemá daemon, takže `restart: unless-stopped` po rebootu
+# kontejnery sám nenastartuje. Instalace viz README (sekce „Start po rebootu“).
+[Unit]
+Description=Odpočet pracovní doby (podman-compose)
+Wants=podman-user-wait-network-online.service
+After=podman-user-wait-network-online.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=%h/Github/odpocetPracovniDoby
+ExecStart=/usr/bin/podman-compose up -d
+ExecStop=/usr/bin/podman-compose stop
+TimeoutStartSec=600
+
+[Install]
+WantedBy=default.target

@@ -16,7 +16,7 @@ VISITOR_COOKIE_NAME = "visitor_id"
 VISITOR_COOKIE_MAX_AGE = 10 * 365 * 24 * 60 * 60  # 10 let
 
 # Requesty s těmito User-Agenty (např. healthcheck) se do visits nelogují.
-_SKIP_LOG_UA_PREFIXES = ("Python-urllib", "curl/")
+_SKIP_LOG_UA_PREFIXES = ("Python-urllib", "curl/", "Wget")
 
 # Citlivé hlavičky, které se do raw_headers neukládají.
 _SENSITIVE_HEADERS = {"Cookie", "Authorization", "Proxy-Authorization"}
