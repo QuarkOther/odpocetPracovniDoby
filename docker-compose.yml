@@ -8,6 +8,10 @@ services:
       MYSQL_USER: odpocet
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-changeme}
+    ports:
+      # host MYSQL_BIND_ADDRESS:3307 -> mysql:3306 pro přístup k DB (např. DBeaver).
+      # Adresa se nastavuje v .env (výchozí 127.0.0.1 = dostupné jen z localhostu).
+      - "${MYSQL_BIND_ADDRESS:-127.0.0.1}:3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
