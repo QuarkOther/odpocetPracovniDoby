@@ -40,10 +40,15 @@ podman-compose up --build
 
 Poté otevři <http://localhost:13400>.
 
-> **Pozor – healthcheck podu:** healthcheck v `docker-compose.yml` míří na
-> `http://localhost:13400/`. Pokud kontejner běží jako pod na jiném stroji (ne
-> lokálně), je potřeba adresu `localhost` upravit na adresu daného stroje,
-> například `http://192.0.2.10:13400/`.
+> **Adresa, na které aplikace poslouchá**, se nastavuje jen na jednom místě –
+> proměnnou `BIND_ADDRESS` v `.env` (výchozí `127.0.0.1`, tj. dostupné jen
+> z localhostu). Na serveru ji nastav na adresu, na kterou míří Cloudflare
+> Tunnel, např. `BIND_ADDRESS=192.0.2.10`. Nic dalšího měnit není potřeba –
+> healthcheck běží uvnitř kontejneru a na adrese hostu nezávisí.
+>
+> Pokud `cloudflared` běží na stejném stroji, nech `127.0.0.1` a v tunelu
+> nastav `http://localhost:13400` – pak nejde hlavičky `CF-Connecting-IP` /
+> `CF-IP*` (IP a poloha návštěvníka) podvrhnout obejitím Cloudflare.
 
 ## Lokální spuštění (bez kontejneru)
 ```bash
@@ -51,16 +56,59 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## Testy
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Integrační testy proti skutečné MySQL se spustí jen s nastaveným
+`MYSQL_TEST_HOST`, např.:
+```bash
+podman run -d --rm --name odpocet-test-mysql -p 127.0.0.1:33306:3306 \
+  -e MYSQL_DATABASE=odpocet -e MYSQL_USER=odpocet -e MYSQL_PASSWORD=testpw \
+  -e MYSQL_ROOT_PASSWORD=rootpw docker.io/library/mysql:8.4
+MYSQL_TEST_HOST=127.0.0.1 MYSQL_TEST_PORT=33306 MYSQL_PASSWORD=testpw pytest
+```
+
 ## Struktura projektu
 
 | Soubor / složka        | Účel                                                        |
 | ---------------------- | ----------------------------------------------------------- |
 | `app.py`               | Flask server, definice pracovní doby, běží na portu `13400` |
+| `db.py`                | Připojení k MySQL, schéma a zápis tabulky `visits`           |
+| `geo.py`               | Geolokace IP (Cloudflare hlavičky / ip-api.com fallback)     |
 | `templates/index.html` | HTML šablona stránky                                         |
 | `static/script.js`     | Logika odpočtu, přesčasu, ciferníku a ukládání              |
 | `static/style.css`     | Vzhled                                                       |
 | `Dockerfile`           | Obraz s Pythonem 3.12                                        |
 | `docker-compose.yml`   | Spuštění kontejneru vč. healthchecku                        |
+
+## Logování návštěv (MySQL)
+
+Aplikace loguje každou návštěvu (mimo `/static/*` a healthcheck) do MySQL
+tabulky `visits` – IP adresu, polohu (z Cloudflare hlaviček nebo fallback
+`ip-api.com`), prohlížeč/OS/zařízení, hlavičky (bez `Cookie` a
+`Authorization`) a další metadata. Tabulka se
+vytvoří automaticky při startu (`db.py`).
+
+Před spuštěním zkopíruj `.env.example` na `.env` a nastav hesla:
+```bash
+cp .env.example .env
+```
+
+Proměnné prostředí (výchozí hodnoty pro `docker compose`):
+
+| Proměnná            | Účel                                   |
+| ------------------- | --------------------------------------- |
+| `MYSQL_PASSWORD`     | heslo uživatele `odpocet`               |
+| `MYSQL_ROOT_PASSWORD`| root heslo MySQL kontejneru              |
+| `BIND_ADDRESS`       | adresa hostu pro port `13400` (výchozí `127.0.0.1`) |
+
+Pro přesnější geolokaci (bez závislosti na externím API) povol v Cloudflare
+dashboardu **Rules → Managed Transforms → "Add visitor location headers"** –
+aplikace pak automaticky použije `CF-IPCountry`, `CF-IPCity`,
+`CF-IPLatitude/Longitude` atd.
 
 ## Nastavení pracovní doby
 
